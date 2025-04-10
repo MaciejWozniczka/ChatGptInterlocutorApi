@@ -1,39 +1,38 @@
-﻿using OpenAI.Chat;
-
-namespace ChatGptInterlocutor.Services;
+﻿namespace ChatGptInterlocutor.Services;
 
 public interface IOpenAiService
 {
-    Task<string> SendChatQuery(string prompt);
+    Task<string?> SendChatQuery(string prompt);
 }
 public class OpenAiService : IOpenAiService
 {
-    private readonly ChatGptOptions _configuration;
-    private AzureOpenAIClient? _client;
-    public OpenAiService(IOptions<ChatGptOptions> configuration) : base()
+    private readonly string _url;
+    private readonly string _key;
+    public OpenAiService(IConfiguration configuration)
     {
-        _configuration = configuration.Value;
+        _url = configuration.GetSection("ChatGptAuth:Endpoint").Value;
+        _key = configuration.GetSection("ChatGptAuth:Key").Value;
     }
 
-    private AzureOpenAIClient GetClient()
+    async Task<string?> IOpenAiService.SendChatQuery(string prompt)
     {
-        if (_client == null)
+        var requestData = new OpenAiRequest
         {
-            _client ??= new AzureOpenAIClient(new Uri(_configuration.Endpoint),
-                new AzureKeyCredential(_configuration.Key));
-        }
-        return _client;
-    }
+            Model = "gpt-4o",
+            Input = prompt
+        };
 
-    async Task<string> IOpenAiService.SendChatQuery(string prompt)
-    {
-        var client = GetClient();
-        var chatGpt = client.GetChatClient("FS4o");
-
-        var chatResponse =
-            await chatGpt.CompleteChatAsync(
-                new UserChatMessage(prompt));
-
-        return chatResponse.Value.Content.FirstOrDefault()?.Text!;
+        var response = await "https://api.openai.com/v1/chat/completions"
+            .WithOAuthBearerToken(_key)
+            .PostJsonAsync(new
+            {
+                model = "gpt-4o",
+                messages = new[] {
+                    new { role = "user", content = prompt }
+                }
+            })
+            .ReceiveJson<OpenAiResponse>();
+            
+        return response.Choices.FirstOrDefault()?.Message.Content;
     }
 }
