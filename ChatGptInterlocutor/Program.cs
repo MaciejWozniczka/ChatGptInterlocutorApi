@@ -25,15 +25,12 @@ services.AddMediatR(typeof(Program));
 
 services.AddScoped<IOpenAiService, OpenAiService>();
 
-services.Configure<ChatGptOptions>(configuration.GetSection("ChatGptOptions"));
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
-
 
 app.UseHttpsRedirection();
 app.UseRouting();
@@ -47,6 +44,6 @@ app.UseEndpoints(endpoints =>
 });
 
 app.UseSwagger();
-app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CaseWareStatus v1"));
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ChatGptInterlocutor v1"));
 
 app.Run();
